@@ -10,4 +10,7 @@ cp .build/release/PortKiller "$APP/Contents/MacOS/PortKiller"
 cp Support/Info.plist "$APP/Contents/Info.plist"
 codesign --force --sign "${SIGN_IDENTITY:--}" "$APP"
 echo "Built $APP"
-[[ "${1:-}" == "run" ]] && { pkill -x PortKiller || true; open "$APP"; }
+if [[ "${1:-}" == "run" ]]; then
+  pkill -x PortKiller || true
+  open "$APP"
+fi
