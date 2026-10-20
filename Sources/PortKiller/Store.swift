@@ -8,7 +8,16 @@ final class Store: ObservableObject {
     @Published private(set) var stopping: [Int32: Stopping] = [:]
     @Published var error: String?
 
+    private let demo: Bool
+
+    init(demo listeners: [Listener]? = nil, stopping: [Int32: Stopping] = [:]) {
+        self.demo = listeners != nil
+        self.listeners = listeners ?? []
+        self.stopping = stopping
+    }
+
     func refresh() {
+        guard !demo else { return }
         Task.detached(priority: .userInitiated) {
             let result = Scanner.scan()
             await MainActor.run { self.listeners = result }

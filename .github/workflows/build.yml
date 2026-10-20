@@ -1,0 +1,14 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./build.sh
+      - run: build/PortKiller.app/Contents/MacOS/PortKiller --list

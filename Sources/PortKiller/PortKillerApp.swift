@@ -14,6 +14,11 @@ struct PortKillerApp: App {
             }
             exit(0)
         }
+        if let i = CommandLine.arguments.firstIndex(of: "--screenshot") {
+            let dir = CommandLine.arguments.indices.contains(i + 1) ? CommandLine.arguments[i + 1] : "."
+            MainActor.assumeIsolated { Screenshot.render(into: dir) }
+            exit(0)
+        }
     }
 
     var body: some Scene {

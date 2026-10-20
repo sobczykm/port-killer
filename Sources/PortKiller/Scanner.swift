@@ -148,9 +148,9 @@ enum Scanner {
 enum Signals {
     /// nil on success, otherwise a message for the user.
     static func send(_ pid: Int32, force: Bool) -> String? {
-        guard pid > 1, pid != getpid() else { return "Tego procesu nie zatrzymam" }
+        guard pid > 1, pid != getpid() else { return "Refusing to stop this process" }
         if kill(pid, force ? SIGKILL : SIGTERM) == 0 { return nil }
-        return errno == EPERM ? "Brak uprawnień (proces innego użytkownika)" : String(cString: strerror(errno))
+        return errno == EPERM ? "Permission denied (owned by another user)" : String(cString: strerror(errno))
     }
 
     static func isAlive(_ pid: Int32) -> Bool {

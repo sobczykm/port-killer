@@ -12,18 +12,18 @@ struct MenuView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Nasłuchujące porty").font(.headline)
+                Text("Listening ports").font(.headline)
                 Spacer()
                 Button { store.refresh() } label: { Image(systemName: "arrow.clockwise") }
                     .buttonStyle(.borderless)
-                    .help("Odśwież")
+                    .help("Refresh")
             }
             .padding(12)
 
             Divider()
 
             if visible.isEmpty {
-                Text("Nic nie nasłuchuje").foregroundStyle(.secondary).padding(12)
+                Text("Nothing is listening").foregroundStyle(.secondary).padding(12)
             } else {
                 ScrollView {
                     VStack(spacing: 0) {
@@ -42,12 +42,12 @@ struct MenuView: View {
             }
 
             HStack {
-                Toggle("Systemowe (\(hiddenCount))", isOn: $showSystem)
+                Toggle("System (\(hiddenCount))", isOn: $showSystem)
                     .toggleStyle(.checkbox)
                     .font(.caption)
                 Spacer()
                 if visible.count > 1 {
-                    Button(confirmAll ? "Na pewno?" : "Zatrzymaj wszystkie") {
+                    Button(confirmAll ? "Sure?" : "Stop all") {
                         if confirmAll {
                             store.stopAll(visible)
                             confirmAll = false
@@ -58,7 +58,7 @@ struct MenuView: View {
                     }
                     .tint(confirmAll ? .red : nil)
                 }
-                Button("Zakończ") { NSApp.terminate(nil) }
+                Button("Quit") { NSApp.terminate(nil) }
             }
             .controlSize(.small)
             .padding(12)
@@ -91,8 +91,9 @@ private struct Row: View {
                             }
                         }
                         .buttonStyle(.borderless)
+                        .foregroundStyle(Color.accentColor)
                         .font(.system(.body, design: .monospaced).weight(.semibold))
-                        .help(port.exposed ? "Dostępny z sieci (nasłuchuje na wszystkich interfejsach). Kliknij, by otworzyć." : "Otwórz w przeglądarce")
+                        .help(port.exposed ? "Reachable from the network (listening on all interfaces). Click to open." : "Open in browser")
                     }
                 }
                 Text(listener.project ?? listener.name).lineLimit(1).truncationMode(.middle)
@@ -103,15 +104,14 @@ private struct Row: View {
             case .terminating:
                 ProgressView().controlSize(.small)
             case .stubborn:
-                Button("Wymuś", role: .destructive, action: stop)
-                    .tint(.red)
+                Button(role: .destructive, action: stop) { Text("Force quit").foregroundStyle(.red) }
                     .controlSize(.small)
-                    .help("Proces nie zakończył się po SIGTERM — wyślij SIGKILL")
+                    .help("Still running after SIGTERM — send SIGKILL")
             case nil:
                 Button(action: stop) { Image(systemName: "xmark.circle.fill").imageScale(.large) }
                     .buttonStyle(.borderless)
                     .foregroundStyle(.secondary)
-                    .help("Zatrzymaj (SIGTERM)")
+                    .help("Stop (SIGTERM)")
             }
         }
         .padding(.horizontal, 12)

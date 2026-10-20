@@ -1,34 +1,60 @@
-# port-killer
+# PortKiller
 
-Aplikacja w pasku menu: pokazuje, co słucha na portach TCP (`localhost:3000`, `8080`, …), z czytelnym opisem, co to za proces i z którego projektu, oraz pozwala go ubić jednym kliknięciem.
+A tiny macOS menu bar app that shows **what is listening on your ports** — and which project started it — and stops it in one click.
 
-## Status
+No more `lsof -i :3000 | grep LISTEN` followed by `kill -9` on the wrong PID.
 
-**MVP (20.10.2026)** — działa lokalnie, budowane ad-hoc.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/dark.png">
+    <img src="docs/light.png" alt="PortKiller menu listing dev servers on ports 3000, 5173, 8080, 5432 and 9090" width="380">
+  </picture>
+</p>
+
+## Features
+
+- **Every TCP port in LISTEN state**, grouped by process, sorted by port.
+- **Which project it belongs to** — the nearest folder with `.git`, `package.json` or `go.mod` above the process's working directory. `kubectl port-forward` shows its target instead.
+- **🌐 marks ports reachable from the network** (bound to `*` / `0.0.0.0` instead of `127.0.0.1`) — handy before you join café Wi‑Fi.
+- **Click a port** to open `http://localhost:<port>`.
+- **✕ sends SIGTERM.** If the process is still alive after 2 s, a **Force quit** button sends SIGKILL.
+- **Stop all** (with confirmation) for the end of the day.
+- macOS services and helpers of GUI apps (AirPlay, VS Code, …) are hidden by default; Docker, OrbStack, Ollama and Postgres always show up.
+- Refreshes when you open the menu — no background polling, no network access, no telemetry.
+
+## Install
+
+Requires macOS 14+ and the Swift toolchain (`xcode-select --install`).
 
 ```sh
-./build.sh run                                   # build/PortKiller.app, ikona 🌐 w pasku menu
-build/PortKiller.app/Contents/MacOS/PortKiller --list   # to samo w terminalu (debug)
+git clone https://github.com/sobczykm/port-killer.git
+cd port-killer
+./build.sh run          # builds build/PortKiller.app and launches it
 ```
 
-Zrobione: lista portów TCP LISTEN (lsof) pogrupowana po procesie, nazwa projektu (najbliższy katalog z `.git`/`package.json`/`go.mod`, `kubectl port-forward` → cel), czas działania, 🌐 przy portach dostępnych z sieci, klik w port otwiera `http://localhost:port`, ✕ = SIGTERM, po 2 s „Wymuś” = SIGKILL, „Zatrzymaj wszystkie” z potwierdzeniem, ukrywanie procesów systemowych i helperów aplikacji z `/Applications` (przełącznik „Systemowe”). Odświeżanie przy każdym otwarciu menu.
+Move `build/PortKiller.app` to `/Applications` to keep it. There are no prebuilt binaries yet — unsigned downloads get blocked by Gatekeeper, so building locally is the smoothest path.
 
-## MVP
+## Command line
 
-- Ikona w pasku menu, po kliknięciu lista nasłuchujących portów: port, nazwa procesu, PID, katalog roboczy (→ nazwa projektu, np. `maiday`), czas działania.
-- „Kill” (SIGTERM, po kilku s opcja SIGKILL) i „Kill all dev” dla wybranych portów.
-- Odświeżanie przy otwarciu menu (bez stałego pollingu).
-- Opcjonalnie liczba zajętych portów jako badge przy ikonie.
+```sh
+build/PortKiller.app/Contents/MacOS/PortKiller --list
+```
 
-## Notatki techniczne
+prints the same list in the terminal (`*` = reachable from the network, `[sys]` = hidden by default).
 
-- Źródło danych: `lsof -nP -iTCP -sTCP:LISTEN -F pcn` albo bez procesów zewnętrznych — `proc_listpids` + `proc_pidfdinfo` (libproc). Katalog roboczy: `proc_pidinfo(PROC_PIDVNODEPATHINFO)`.
-- Procesy innych użytkowników / roota: tylko pokazać, bez kill.
-- Rozpoznawanie: `node`/`bun` → nazwa z `package.json` w cwd, `go`/binarka z `go build`, `docker-proxy`/OrbStack → nazwa kontenera (później), `kubectl port-forward` → namespace/svc.
+## How it works
 
-## Decyzje / TODO
+| | |
+|---|---|
+| Listening sockets | `lsof -nP -iTCP -sTCP:LISTEN -F` (~30 ms) |
+| Executable, working directory, start time | `libproc` (`proc_pidpath`, `proc_pidinfo`) |
+| Command line | one `ps -o pid=,args=` call for all PIDs |
+| Stopping | `kill(2)` — SIGTERM, then SIGKILL on request |
 
-- [x] lsof vs libproc → lsof do listy (~30 ms), libproc do ścieżki/cwd/startu
-- [ ] start przy logowaniu (`SMAppService.mainApp`)
-- [ ] ikona aplikacji, Docker/OrbStack → nazwa kontenera
-- [ ] dystrybucja: **nie Mac App Store** (sandbox blokuje `lsof`/`kill` innych procesów) → Developer ID + notaryzacja, sprzedaż np. przez Paddle / Lemon Squeezy / Gumroad
+PortKiller runs as your user, so it only sees and stops your own processes — no root, no helper tools.
+
+It is not on the Mac App Store on purpose: the App Sandbox does not allow inspecting or signalling other processes.
+
+## License
+
+[MIT](LICENSE) — provided "as is", without warranty of any kind. Stopping a process loses its unsaved state; you are clicking the ✕.
