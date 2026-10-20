@@ -4,7 +4,14 @@ Aplikacja w pasku menu: pokazuje, co słucha na portach TCP (`localhost:3000`, `
 
 ## Status
 
-**pomysł (priorytet)** — nic nie zaimplementowane.
+**MVP (20.10.2026)** — działa lokalnie, budowane ad-hoc.
+
+```sh
+./build.sh run                                   # build/PortKiller.app, ikona 🌐 w pasku menu
+build/PortKiller.app/Contents/MacOS/PortKiller --list   # to samo w terminalu (debug)
+```
+
+Zrobione: lista portów TCP LISTEN (lsof) pogrupowana po procesie, nazwa projektu (najbliższy katalog z `.git`/`package.json`/`go.mod`, `kubectl port-forward` → cel), czas działania, 🌐 przy portach dostępnych z sieci, klik w port otwiera `http://localhost:port`, ✕ = SIGTERM, po 2 s „Wymuś” = SIGKILL, „Zatrzymaj wszystkie” z potwierdzeniem, ukrywanie procesów systemowych i helperów aplikacji z `/Applications` (przełącznik „Systemowe”). Odświeżanie przy każdym otwarciu menu.
 
 ## MVP
 
@@ -21,4 +28,7 @@ Aplikacja w pasku menu: pokazuje, co słucha na portach TCP (`localhost:3000`, `
 
 ## Decyzje / TODO
 
-- [ ] lsof vs libproc (zacząć od lsof, zmierzyć czas)
+- [x] lsof vs libproc → lsof do listy (~30 ms), libproc do ścieżki/cwd/startu
+- [ ] start przy logowaniu (`SMAppService.mainApp`)
+- [ ] ikona aplikacji, Docker/OrbStack → nazwa kontenera
+- [ ] dystrybucja: **nie Mac App Store** (sandbox blokuje `lsof`/`kill` innych procesów) → Developer ID + notaryzacja, sprzedaż np. przez Paddle / Lemon Squeezy / Gumroad
